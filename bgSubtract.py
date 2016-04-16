@@ -14,12 +14,12 @@ kernel = np.ones((5,5),np.uint8)
 while(1):
     ret, frame = cap.read()
 
-    
+    fgmask = cv2.cvtColor(frame,cv2.COLOR_BGR2GRAY)
+
     #frame = imutils.resize(frame, width=500)
     
-    fgmask = fgbg.apply(frame)
+    fgmask = fgbg.apply(fgmask)
     #add leaningRate flag above if you're getting things in background which shouldnt be - but it makes people less solid
-    #fgmask = cv2.cvtColor(fgmask,cv2.COLOR_BGR2GRAY)
 
     #fgmask = cv2.threshold(fgmask, 1, 255, cv2.THRESH_BINARY)[1]
     #fgmask = cv2.adaptiveThreshold(fgmask,255
