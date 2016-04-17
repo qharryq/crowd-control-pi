@@ -1,3 +1,4 @@
+from collections import deque
 import numpy as np
 import cv2
 import imutils
@@ -13,11 +14,10 @@ kernel = np.ones((5,5),np.uint8)
 
 while(1):
     ret, frame = cap.read()
-
     fgmask = cv2.cvtColor(frame,cv2.COLOR_BGR2GRAY)
 
     #frame = imutils.resize(frame, width=500)
-    
+    #fgmask = cv2.threshold(fgmask, 0, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)[1] Look at otsu thresholding if you have time! might be more accurate
     fgmask = fgbg.apply(fgmask)
     #add leaningRate flag above if you're getting things in background which shouldnt be - but it makes people less solid
 
@@ -28,12 +28,15 @@ while(1):
 #, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY,11,2)
     #ret, fgmask = cv2.threshold(fgmask,127,255,0)
 
+    fgmask = cv2.erode(fgmask,None,iterations=2)
+    #fgmask = cv2.erode(fgmask,kernel,iterations=1)
+    fgmask = cv2.dilate(fgmask,None,iterations=2)
     #fgmask = cv2.blur(fgmask,(5,5))
     #fgmask = cv2.GaussianBlur(fgmask,(5,5),0)
     #fgmask = cv2.medianBlur(fgmask,5)
     #fgmask = cv2.dilate(fgmask,kernel,iterations=1)
 
-    #fgmask = cv2.erode(fgmask,kernel,iterations=1)
+    
     #fgmask = cv2.morphologyEx(fgmask, cv2.MORPH_OPEN, kernel)
     #fgmask = cv2.morphologyEx(fgmask, cv2.MORPH_CLOSE, kernel)
 
