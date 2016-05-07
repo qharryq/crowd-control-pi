@@ -38,6 +38,9 @@ cap = cv2.VideoCapture('attic2.avi')
 fgbg = cv2.BackgroundSubtractorMOG()
 kernel = np.ones((5,5),np.uint8)
 peopleList = []
+personIn = 0
+personOut = 0
+
 while(1):
     ret, frame = cap.read()
     width, height = frame.shape[:2]
@@ -92,8 +95,8 @@ while(1):
         cv2.rectangle(frame,(x,y),(x+w,y+h),(0,255,0),2)
         cv2.circle(frame, center, 5, (0, 0, 255), -1)
         print "people list has length of %d" % len(peopleList)
-        if len(peopleList) > 1:
-            sys.exit("error message ")
+        #if len(peopleList) > 1:
+            #sys.exit("error message ")
         
         #if there are no people currently being tracked, e.g for first view frames                   
         if not peopleList:
@@ -109,6 +112,8 @@ while(1):
             print "already people"
             for person in peopleList:
                 p.assigned = False
+                print "here is a point"
+                print person.points[-1]
                 #get distance between contour center and the last coordinate of each person currently being tracked
                 #print center
                 #print person.points[-1]
@@ -121,7 +126,8 @@ while(1):
                     t = TrackingInfo(d,center,person.points[-1])
                     temp.append(t)
                     #oldContours keeps track of contours which are linked to people from a previous frame
-                    oldContours.append(c)
+                    if c not in oldContours:
+                        oldContours.append(c)
                     
 
                 
@@ -131,6 +137,9 @@ while(1):
     print "old contours = "
     print oldContours
     for c in contours:
+        area = cv2.contourArea(c)
+        M = cv2.moments(c)
+        center = (int(M["m10"]/M["m00"]), int(M["m01"]/M["m00"]))
         if area < 1000:
             continue
         if c not in oldContours:
@@ -170,6 +179,8 @@ while(1):
                     p.points.append(te.center)
                     p.assigned = True
                     count += 1
+                    print "count is %d" % count
+                    print count
                     for i in xrange(len(newTemp) -1, -1, -1):
                         if newTemp[i].personPoint == p.points[-1] or te.center == newTemp[i].center:
                             del newTemp[i]
@@ -195,10 +206,31 @@ while(1):
     print "getting rid of people who have left the frame"
     tempPeopleList = [p for p in peopleList if p.assigned == True]
     peopleList = tempPeopleList
-            
-    
+
+    #IDK if there's still people left in temp at the end of loop that need to be dealt with?? factor to keep in mind if things don't work as they should        
+
+    #Now to determine the if a person has crossed the line and if so - in what direction: in or out
+    for person in peopleList:
+        #check if the person has been in more than one frame
+        if len(person.points) > 1:
+            #get last coordinate of person
+            x, y = person.points[-1]
+            #get coordinate of person in frame before that
+            x1, y1 = person.points[-2]
+            #determines whether the person has crossed the line using their last 2 coordinates and in what direction they are travelling
+            if y < 75 and y1 > 75:
+                personIn +=1
+            elif y > 75 and y1 < 75:
+                personOut+=1
+    personInStr = str(personIn)
+    personOutStr = str(personOut)
+   
     #img =cv2.drawContours(frame,contours,-1, (0,255,0), 3)
+    #draw line intersecting frame, this is the line a person must cross for them to register as entering/exiting
     cv2.line(frame, (0,75), (300,75), (255,255,255))
+    #print num people in and out to screen
+    cv2.putText(frame,personInStr,(30,50),cv2.FONT_HERSHEY_SIMPLEX,2,255)
+    cv2.putText(frame,personOutStr,(30,200),cv2.FONT_HERSHEY_SIMPLEX,2,255)
     cv2.imshow('frame', fgmask)
     cv2.imshow('frame2', frame)
     
