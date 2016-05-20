@@ -7,6 +7,10 @@ import datetime
 import time
 import math
 import sys
+import requests
+import json
+import datetime
+from requests.auth import HTTPBasicAuth 
 
 
 '''class Point:
@@ -33,6 +37,12 @@ class TrackingInfo:
 
 def distance(p0, p1):
     return math.sqrt((p0[0]-p1[0])**2 +(p0[1]-p1[1])**2)
+
+headers = {
+    'Content-Type': 'application/json',
+}
+
+
 
 cap = cv2.VideoCapture('attic2.avi')
 fgbg = cv2.BackgroundSubtractorMOG()
@@ -80,12 +90,13 @@ while(1):
     temp = []
     tempPeopleList = []
     oldContours = []
+    print "people list has length of %d" % len(peopleList)
     for c in contours:
-        print "should start here!"
+        #print "should start here!"
         #print contourId
         
         area = cv2.contourArea(c)
-        if area < 1000:
+        if area < 1200:
             continue
             #print cv2.contourArea(c)
     
@@ -94,13 +105,13 @@ while(1):
         (x,y,w,h) = cv2.boundingRect(c)
         cv2.rectangle(frame,(x,y),(x+w,y+h),(0,255,0),2)
         cv2.circle(frame, center, 5, (0, 0, 255), -1)
-        print "people list has length of %d" % len(peopleList)
+        #print "people list has length of %d" % len(peopleList)
         #if len(peopleList) > 1:
             #sys.exit("error message ")
         
         #if there are no people currently being tracked, e.g for first view frames                   
         if not peopleList:
-            print "first person"
+            #print "first person"
             p = Person()
             p.points = []
             p.points.append(center)
@@ -112,21 +123,26 @@ while(1):
             print "already people"
             for person in peopleList:
                 p.assigned = False
-                print "here is a point"
-                print person.points[-1]
+                #print "here is a point"
+                #print person.points[-1]
                 #get distance between contour center and the last coordinate of each person currently being tracked
                 #print center
                 #print person.points[-1]
                 d = distance(center, person.points[-1])
-                print d
+                #print d
                 #threshold over which the objects in the 2 frames are too far apart to be the same object
                 #add to temp if under
-                if d < 15:
-                    print "less than 15"
+                if d < 35:
+                    #print "less than 15"
                     t = TrackingInfo(d,center,person.points[-1])
                     temp.append(t)
                     #oldContours keeps track of contours which are linked to people from a previous frame
-                    if c not in oldContours:
+                    #print (c not in oldContours).all()
+                    #if any(item not in oldContours for item in c):
+                    if any(c in s for s in oldContours):
+                    #if c not in oldContours:
+                        pass
+                    else:
                         oldContours.append(c)
                     
 
@@ -134,18 +150,20 @@ while(1):
                 
                     
     #is the contour did not make the oldContours list, it means they are not close enough to contours in previous frames to be considered the same people and thus must be a new person!
-    print "old contours = "
-    print oldContours
+    #print "old contours = "
+    #print oldContours
     for c in contours:
         area = cv2.contourArea(c)
         M = cv2.moments(c)
         center = (int(M["m10"]/M["m00"]), int(M["m01"]/M["m00"]))
-        if area < 1000:
+        if area < 1200:
             continue
-        if c not in oldContours:
-            print "while"
-            print c
-            print "not in old contours"
+        if any(c in s for s in oldContours):
+            pass
+        else:
+            #print "while"
+           #print c
+            #print "not in old contours"
             p2 = Person()
             p2.points = []
             #doesnt have centre down here 
@@ -220,8 +238,17 @@ while(1):
             #determines whether the person has crossed the line using their last 2 coordinates and in what direction they are travelling
             if y < 75 and y1 > 75:
                 personIn +=1
+                timeStamp = str(datetime.datetime.now().isoformat())
+                dataIn = {"timestamp" : timeStamp, "peopleIn" : "1", "peopleOut" : "0", "venue" : "http://ccwebapp-env.eu-west-1.elasticbeanstalk.com/venues/6"}
+                payload = json.dumps(dataIn)
+                requests.post('http://ccwebapp-env.eu-west-1.elasticbeanstalk.com/timestamps', headers = headers, data = payload, auth=HTTPBasicAuth('qharryq@hotmail.com', 'sdsd'))
             elif y > 75 and y1 < 75:
                 personOut+=1
+                timeStamp = str(datetime.datetime.now().isoformat())
+                dataOut = {"timestamp" : timeStamp, "peopleIn" : "0", "peopleOut" : "1", "venue" : "http://ccwebapp-env.eu-west-1.elasticbeanstalk.com/venues/6"}
+                payload = json.dumps(dataOut)
+                requests.post('http://ccwebapp-env.eu-west-1.elasticbeanstalk.com/timestamps', headers = headers, data = payload, auth=HTTPBasicAuth('qharryq@hotmail.com', 'sdsd'))
+                
     personInStr = str(personIn)
     personOutStr = str(personOut)
    
