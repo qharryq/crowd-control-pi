@@ -50,6 +50,7 @@ kernel = np.ones((5,5),np.uint8)
 peopleList = []
 personIn = 0
 personOut = 0
+currentAttendance =0
 
 while(1):
     ret, frame = cap.read()
@@ -238,14 +239,18 @@ while(1):
             #determines whether the person has crossed the line using their last 2 coordinates and in what direction they are travelling
             if y < 75 and y1 > 75:
                 personIn +=1
+                currentAttendance +=1
                 timeStamp = str(datetime.datetime.now().isoformat())
-                dataIn = {"timestamp" : timeStamp, "peopleIn" : "1", "peopleOut" : "0", "venue" : "http://ccwebapp-env.eu-west-1.elasticbeanstalk.com/venues/6"}
+                currentAttendanceStr = str(currentAttendance)
+                dataIn = {"timestamp" : timeStamp, "peopleIn" : "1", "peopleOut" : "0",  "currentAttendance" : currentAttendanceStr, "venue" : "http://ccwebapp-env.eu-west-1.elasticbeanstalk.com/venues/6"}
                 payload = json.dumps(dataIn)
                 requests.post('http://ccwebapp-env.eu-west-1.elasticbeanstalk.com/timestamps', headers = headers, data = payload, auth=HTTPBasicAuth('qharryq@hotmail.com', 'sdsd'))
             elif y > 75 and y1 < 75:
                 personOut+=1
+                currentAttendance -=1
                 timeStamp = str(datetime.datetime.now().isoformat())
-                dataOut = {"timestamp" : timeStamp, "peopleIn" : "0", "peopleOut" : "1", "venue" : "http://ccwebapp-env.eu-west-1.elasticbeanstalk.com/venues/6"}
+                currentAttendanceStr = str(currentAttendance)
+                dataOut = {"timestamp" : timeStamp, "peopleIn" : "0", "peopleOut" : "1", "currentAttendance" : currentAttendanceStr, "venue" : "http://ccwebapp-env.eu-west-1.elasticbeanstalk.com/venues/6"}
                 payload = json.dumps(dataOut)
                 requests.post('http://ccwebapp-env.eu-west-1.elasticbeanstalk.com/timestamps', headers = headers, data = payload, auth=HTTPBasicAuth('qharryq@hotmail.com', 'sdsd'))
                 
